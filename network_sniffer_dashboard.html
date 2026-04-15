@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Packet Analyzer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark-bg: #0f172a;
+            --card-bg: #1e293b;
+            --border: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            --accent: #06b6d4;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 24px 32px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-content {
+            max-width: 1920px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            font-size: 24px;
+        }
+
+        .header-title h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .header-title p {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin: 4px 0 0;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: #334155;
+            border-color: var(--text-tertiary);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Main Content */
+        .main {
+            padding: 32px;
+            background: var(--dark-bg);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-icon {
+            font-size: 18px;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-unit {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-left: 4px;
+        }
+
+        /* Status Indicator */
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        .status-badge.inactive {
+            background: rgba(107, 114, 128, 0.1);
+            color: var(--text-tertiary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--secondary);
+            animation: pulse 2s infinite;
+        }
+
+        .status-badge.inactive .status-dot {
+            background: var(--text-tertiary);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Charts */
+        .chart-container {
+            position: relative;
+            height: 280px;
+            margin-top: 16px;
+        }
+
+        /* Protocol Grid */
+        .protocol-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .protocol-badge {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .protocol-badge:hover {
+            border-color: var(--accent);
+            background: rgba(6, 182, 212, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .protocol-name {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .protocol-count {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* Packet List */
+        .packet-section {
+            margin-top: 24px;
+        }
+
+        .packet-list {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            max-height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .packet-list-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(15, 23, 42, 0.5);
+            display: grid;
+            grid-template-columns: 100px 80px 1fr 1fr 100px;
+            gap: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .packet-items {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .packet-item {
+            padding: 16px 24px;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.3);
+            display: grid;
+            grid-template-columns: 100px 80px 1fr 1fr 100px;
+            gap: 16px;
+            align-items: center;
+            transition: all 0.2s ease;
+            font-size: 13px;
+        }
+
+        .packet-item:hover {
+            background: rgba(6, 182, 212, 0.05);
+        }
+
+        .packet-time {
+            color: var(--accent);
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+
+        .packet-protocol {
+            background: rgba(37, 99, 235, 0.15);
+            color: var(--primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .packet-src, .packet-dst {
+            font-family: 'Courier New', monospace;
+            color: var(--text-secondary);
+        }
+
+        .packet-src {
+            color: var(--secondary);
+        }
+
+        .packet-dst {
+            color: var(--danger);
+        }
+
+        .packet-info {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        .empty-state {
+            padding: 60px 24px;
+            text-align: center;
+            color: var(--text-tertiary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(51, 65, 85, 0.3);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(6, 182, 212, 0.4);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(6, 182, 212, 0.6);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .main {
+                padding: 16px;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-controls {
+                width: 100%;
+            }
+
+            button {
+                flex: 1;
+            }
+
+            .packet-list-header,
+            .packet-item {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <div class="header-left">
+                <div class="logo">🔍</div>
+                <div class="header-title">
+                    <h1>Network Packet Analyzer</h1>
+                    <p>Real-time traffic analysis and visualization</p>
+                </div>
+            </div>
+            <div class="header-controls">
+                <button class="btn-primary" onclick="startSimulation()">
+                    <span>▶</span> Start Capture
+                </button>
+                <button class="btn-secondary" onclick="stopSimulation()">
+                    <span>⏹</span> Stop Capture
+                </button>
+                <button class="btn-danger" onclick="clearData()">
+                    <span>✕</span> Clear Data
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main">
+        <div class="container">
+            <!-- Statistics Grid -->
+            <div class="dashboard-grid">
+                <!-- Statistics Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="card-icon">📊</span>
+                            Capture Statistics
+                        </div>
+                        <div class="status-badge inactive" id="statusBadge">
+                            <span class="status-dot"></span>
+                            <span id="statusText">Idle</span>
+                        </div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Packets</span>
+                            <div style="display: flex; align-items: baseline;">
+                                <span class="stat-value" id="totalPackets">0</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Packets/Second</span>
+                            <div style="display: flex; align-items: baseline;">
+                                <span class="stat-value" id="pps">0</span>
+                                <span class="stat-unit">pps</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Duration</span>
+                            <div style="display: flex; align-items: baseline;">
+                                <span class="stat-value" id="duration">0</span>
+                                <span class="stat-unit">sec</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Data Captured</span>
+                            <div style="display: flex; align-items: baseline;">
+                                <span class="stat-value" id="dataSize">0</span>
+                                <span class="stat-unit">KB</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Protocol Distribution -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="card-icon">📡</span>
+                            Protocol Distribution
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="protocolChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Ports -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span class="card-icon">🔌</span>
+                            Top Ports
+                        </div>
+                    </div>
+                    <div id="portStats" style="padding-top: 8px;">
+                        <div class="empty-state" style="padding: 20px 0;">
+                            No data yet
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Protocol Breakdown -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="card-icon">🔄</span>
+                        Protocol Breakdown
+                    </div>
+                </div>
+                <div class="protocol-grid" id="protocolBreakdown">
+                    <div class="empty-state" style="grid-column: 1/-1; padding: 20px;">
+                        Start capturing to see protocol distribution
+                    </div>
+                </div>
+            </div>
+
+            <!-- Packet List -->
+            <div class="packet-section">
+                <div class="card" style="padding: 0;">
+                    <div style="padding: 24px;">
+                        <div class="card-title">
+                            <span class="card-icon">📨</span>
+                            Captured Packets
+                        </div>
+                    </div>
+                    <div class="packet-list">
+                        <div class="packet-list-header">
+                            <div>Time</div>
+                            <div>Protocol</div>
+                            <div>Source</div>
+                            <div>Destination</div>
+                            <div>Info</div>
+                        </div>
+                        <div class="packet-items" id="packetList">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📭</div>
+                                <div class="empty-state-text">No packets captured yet</div>
+                                <div style="font-size: 12px; margin-top: 8px;">Click "Start Capture" to begin analyzing network traffic</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data storage
+        const data = {
+            packets: [],
+            protocols: { TCP: 0, UDP: 0, ICMP: 0, ARP: 0, IPv6: 0, Other: 0 },
+            ports: {},
+            startTime: null,
+            isRunning: false,
+            totalBytes: 0
+        };
+
+        // Simulated packet data for demonstration
+        const commonPorts = {
+            20: 'FTP-DATA', 21: 'FTP', 22: 'SSH', 23: 'TELNET', 25: 'SMTP',
+            53: 'DNS', 80: 'HTTP', 110: 'POP3', 143: 'IMAP', 443: 'HTTPS',
+            3306: 'MySQL', 5432: 'PostgreSQL', 6379: 'Redis', 8080: 'HTTP-Alt',
+            8443: 'HTTPS-Alt', 27017: 'MongoDB'
+        };
+
+        const samplePackets = [
+            { protocol: 'TCP', src: '192.168.1.100', dst: '93.184.216.34', srcPort: 54123, dstPort: 80, info: 'SYN', size: 54 },
+            { protocol: 'TCP', src: '192.168.1.100', dst: '8.8.8.8', srcPort: 54124, dstPort: 443, info: 'ACK, PSH', size: 1480 },
+            { protocol: 'UDP', src: '192.168.1.100', dst: '8.8.8.8', srcPort: 53145, dstPort: 53, info: 'DNS Query', size: 58 },
+            { protocol: 'ICMP', src: '192.168.1.100', dst: '1.1.1.1', srcPort: 0, dstPort: 0, info: 'Echo Request', size: 32 },
+            { protocol: 'TCP', src: '192.168.1.100', dst: '172.217.16.142', srcPort: 54125, dstPort: 443, info: 'PSH', size: 1024 },
+            { protocol: 'ARP', src: '192.168.1.100', dst: '192.168.1.1', srcPort: 0, dstPort: 0, info: 'Who has', size: 42 },
+            { protocol: 'TCP', src: '192.168.1.100', dst: '34.111.180.67', srcPort: 54126, dstPort: 22, info: 'SSH Init', size: 512 },
+            { protocol: 'UDP', src: '192.168.1.100', dst: '8.8.8.8', srcPort: 53146, dstPort: 53, info: 'DNS Response', size: 245 }
+        ];
+
+        let chartInstance = null;
+        let simulationInterval = null;
+
+        function startSimulation() {
+            if (data.isRunning) return;
+            
+            data.isRunning = true;
+            data.startTime = Date.now();
+            document.getElementById('statusBadge').classList.remove('inactive');
+            document.getElementById('statusBadge').innerHTML = '<span class="status-dot"></span><span id="statusText">Capturing</span>';
+
+            simulationInterval = setInterval(() => {
+                const packet = samplePackets[Math.floor(Math.random() * samplePackets.length)];
+                const newPacket = {
+                    ...packet,
+                    timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                    id: Date.now()
+                };
+
+                data.packets.unshift(newPacket);
+                if (data.packets.length > 100) data.packets.pop();
+
+                data.protocols[packet.protocol] = (data.protocols[packet.protocol] || 0) + 1;
+                const port = `${packet.dstPort}`;
+                data.ports[port] = (data.ports[port] || 0) + 1;
+                data.totalBytes += packet.size;
+
+                updateDisplay();
+            }, 500);
+        }
+
+        function stopSimulation() {
+            data.isRunning = false;
+            clearInterval(simulationInterval);
+            document.getElementById('statusBadge').classList.add('inactive');
+            document.getElementById('statusBadge').innerHTML = '<span class="status-dot"></span><span id="statusText">Stopped</span>';
+        }
+
+        function clearData() {
+            data.packets = [];
+            data.protocols = { TCP: 0, UDP: 0, ICMP: 0, ARP: 0, IPv6: 0, Other: 0 };
+            data.ports = {};
+            data.startTime = null;
+            data.totalBytes = 0;
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            updateStatistics();
+            updateProtocolChart();
+            updateProtocolBreakdown();
+            updatePorts();
+            updatePacketList();
+        }
+
+        function updateStatistics() {
+            const total = Object.values(data.protocols).reduce((a, b) => a + b, 0);
+            const duration = data.startTime ? Math.floor((Date.now() - data.startTime) / 1000) : 0;
+            const pps = duration > 0 ? (total / duration).toFixed(1) : 0;
+            const dataSize = (data.totalBytes / 1024).toFixed(2);
+
+            document.getElementById('totalPackets').textContent = total.toLocaleString();
+            document.getElementById('duration').textContent = duration;
+            document.getElementById('pps').textContent = pps;
+            document.getElementById('dataSize').textContent = dataSize;
+        }
+
+        function updateProtocolChart() {
+            const ctx = document.getElementById('protocolChart').getContext('2d');
+            const data_values = Object.values(data.protocols);
+            
+            if (chartInstance) {
+                chartInstance.data.datasets[0].data = data_values;
+                chartInstance.update();
+            } else {
+                chartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(data.protocols),
+                        datasets: [{
+                            data: data_values,
+                            backgroundColor: [
+                                '#2563eb', '#10b981', '#ef4444', '#f59e0b', '#06b6d4', '#8b5cf6'
+                            ],
+                            borderColor: '#1e293b',
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: '#cbd5e1',
+                                    font: { family: '-apple-system, BlinkMacSystemFont, sans-serif', size: 12, weight: '600' },
+                                    padding: 16,
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                                titleColor: '#f1f5f9',
+                                bodyColor: '#cbd5e1',
+                                borderColor: '#334155',
+                                borderWidth: 1,
+                                padding: 12,
+                                titleFont: { size: 13, weight: '600' },
+                                bodyFont: { size: 12 },
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.parsed + ' packets';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function updateProtocolBreakdown() {
+            const total = Object.values(data.protocols).reduce((a, b) => a + b, 0);
+            const html = Object.entries(data.protocols)
+                .map(([proto, count]) => {
+                    const percent = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+                    return `
+                        <div class="protocol-badge">
+                            <div class="protocol-name">${proto}</div>
+                            <div class="protocol-count">${count}</div>
+                            <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">${percent}%</div>
+                        </div>
+                    `;
+                }).join('');
+            document.getElementById('protocolBreakdown').innerHTML = html || '<div style="grid-column: 1/-1; text-align: center; color: #94a3b8; padding: 20px;">No data</div>';
+        }
+
+        function updatePorts() {
+            const topPorts = Object.entries(data.ports)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            if (topPorts.length === 0) {
+                document.getElementById('portStats').innerHTML = '<div style="padding: 20px 0; text-align: center; color: #94a3b8;">No port data</div>';
+                return;
+            }
+
+            const html = topPorts.map(([port, count]) => {
+                const service = commonPorts[port] || 'Unknown';
+                return `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(51, 65, 85, 0.3);">
+                        <div>
+                            <div style="font-size: 13px; font-weight: 600; color: #f1f5f9;">${service}</div>
+                            <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Port ${port}</div>
+                        </div>
+                        <div style="font-size: 18px; font-weight: 700; color: #06b6d4;">${count}</div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('portStats').innerHTML = html;
+        }
+
+        function updatePacketList() {
+            if (data.packets.length === 0) {
+                document.getElementById('packetList').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div class="empty-state-text">No packets captured</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = data.packets.map(packet => {
+                const srcService = commonPorts[packet.srcPort] || packet.srcPort;
+                const dstService = commonPorts[packet.dstPort] || packet.dstPort;
+                return `
+                    <div class="packet-item">
+                        <span class="packet-time">${packet.timestamp}</span>
+                        <span class="packet-protocol">${packet.protocol}</span>
+                        <span class="packet-src">${packet.src}:${packet.srcPort}</span>
+                        <span class="packet-dst">${packet.dst}:${packet.dstPort}</span>
+                        <span class="packet-info">${packet.info}</span>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('packetList').innerHTML = html;
+        }
+
+        // Initial display update
+        updateDisplay();
+    </script>
+</body>
+</html>

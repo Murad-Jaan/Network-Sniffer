@@ -1,0 +1,47 @@
+# Network Packet Analyzer - Python Dependencies
+# Python 3.6+
+
+# Core dependencies (minimal - using standard library)
+# No external dependencies required for core functionality
+
+# Optional dependencies for enhanced features:
+
+# Web server (for serving dashboard)
+# flask==2.3.2
+# flask-cors==4.0.0
+
+# Advanced packet processing
+# scapy==2.5.0
+# dpkt==1.9.7
+
+# Database storage
+# sqlalchemy==2.0.19
+# sqlite3  # built-in
+
+# Data visualization (for web dashboard)
+# matplotlib==3.7.1
+# plotly==5.14.0
+
+# Performance
+# numpy==1.24.3
+# pandas==2.0.2
+
+# Testing
+# pytest==7.3.2
+# pytest-cov==4.1.0
+
+# Documentation
+# sphinx==6.2.1
+# sphinx-rtd-theme==1.2.0
+
+# Code quality
+# black==23.3.0
+# flake8==6.0.0
+# pylint==2.17.4
+
+# Packaging
+# wheel==0.40.0
+# twine==4.0.2
+
+# Note: The application uses only Python standard library
+# All optional dependencies are for extended functionality
