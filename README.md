@@ -2,7 +2,7 @@
 
 [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub Stars](https://img.shields.io/github/stars/yourusername/network-packet-analyzer.svg)](https://github.com/yourusername/network-packet-analyzer)
+[![GitHub Stars](https://img.shields.io/github/stars/Murad-Jaan/Network-Sniffer.svg)](https://github.com/Murad-Jaan/Network-Sniffer)
 [![Supported OS](https://img.shields.io/badge/OS-Linux%20%7C%20Windows%20%7C%20macOS-brightgreen.svg)](#supported-platforms)
 
 A **professional, enterprise-grade network packet analyzer** that captures, analyzes, and inspects network traffic with advanced vulnerability detection capabilities.
@@ -48,8 +48,8 @@ A **professional, enterprise-grade network packet analyzer** that captures, anal
 
 ```bash
 # Clone repository
-git clone https://github.com/Murad-Jaan/network-packet-analyzer.git
-cd network-packet-analyzer
+git clone https://github.com/Murad-Jaan/Network-Sniffer.git
+cd Network-Sniffer
 
 # Run installer
 chmod +x install.sh
@@ -63,8 +63,8 @@ sudo python3 network_sniffer.py
 
 ```bash
 # Clone repository
-git clone https://github.com/Murad-Jaan/network-packet-analyzer.git
-cd network-packet-analyzer
+git clone https://github.com/Murad-Jaan/Network-Sniffer.git
+cd Network-Sniffer
 
 # Run installer (as Administrator)
 install.bat
@@ -80,8 +80,8 @@ python network_sniffer.py
 brew install python3
 
 # Clone and run
-git clone https://github.com/Murad-Jaan/network-packet-analyzer.git
-cd network-packet-analyzer
+git clone https://github.com/Murad-Jaan/Network-Sniffer.git
+cd Network-Sniffer.git
 sudo python3 network_sniffer.py
 ```
 
@@ -89,8 +89,8 @@ sudo python3 network_sniffer.py
 
 ```bash
 # Build and run
-docker build -t network-analyzer .
-docker run --net=host -it network-analyzer
+docker build -t Network-Sniffer.
+docker run --net=host -it Network-Sniffer
 
 # Or with docker-compose
 docker-compose up
@@ -232,7 +232,7 @@ See [UI_DESIGN_GUIDE.md](UI_DESIGN_GUIDE.md) for detailed customization options.
 ## 📝 Project Structure
 
 ```
-network-packet-analyzer/
+Network-Sniffer/
 ├── network_sniffer.py              # Main sniffer application
 ├── network_sniffer_dashboard.html   # Web dashboard
 ├── setup.py                        # Package setup
@@ -284,9 +284,9 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 ## 🙋 Support
 
 - **Documentation**: Read the [guides](.)
-- **Issues**: Report on [GitHub Issues](https://github.com/yourusername/network-packet-analyzer/issues)
-- **Discussions**: Join [GitHub Discussions](https://github.com/yourusername/network-packet-analyzer/discussions)
-- **Email**: support@example.com
+- **Issues**: Report on [GitHub Issues](https://github.com/Murad-Jaan/Network-Sniffer/issues)
+- **Discussions**: Join [GitHub Discussions](https://github.com/Murad-Jaan/Network-Sniffer.git/discussions)
+- **Email**: muradjan.work@gmail.com
 
 ## 🙏 Acknowledgments
 
@@ -324,8 +324,8 @@ See [NETWORK_SNIFFER_GUIDE.md](NETWORK_SNIFFER_GUIDE.md) for detailed technical 
 ## 🎉 Get Started Today!
 
 ```bash
-git clone https://github.com/Murad-Jaan/network-packet-analyzer.git
-cd network-packet-analyzer
+git clone https://github.com/Murad-Jaan/Network-Sniffer.git
+cd Network-Sniffer
 chmod +x install.sh
 sudo ./install.sh
 ```
