@@ -48,7 +48,7 @@ A **professional, enterprise-grade network packet analyzer** that captures, anal
 
 ```bash
 # Clone repository
-git clone https://github.com/murad-jaan/network-packet-analyzer.git
+git clone https://github.com/Murad-Jaan/network-packet-analyzer.git
 cd network-packet-analyzer
 
 # Run installer
@@ -63,7 +63,7 @@ sudo python3 network_sniffer.py
 
 ```bash
 # Clone repository
-git clone https://github.com/murad-jaan/network-packet-analyzer.git
+git clone https://github.com/Murad-Jaan/network-packet-analyzer.git
 cd network-packet-analyzer
 
 # Run installer (as Administrator)
@@ -80,7 +80,7 @@ python network_sniffer.py
 brew install python3
 
 # Clone and run
-git clone https://github.com/murad-jaan/network-packet-analyzer.git
+git clone https://github.com/Murad-Jaan/network-packet-analyzer.git
 cd network-packet-analyzer
 sudo python3 network_sniffer.py
 ```
@@ -324,7 +324,7 @@ See [NETWORK_SNIFFER_GUIDE.md](NETWORK_SNIFFER_GUIDE.md) for detailed technical 
 ## 🎉 Get Started Today!
 
 ```bash
-git clone https://github.com/murad-jaan/network-packet-analyzer.git
+git clone https://github.com/Murad-Jaan/network-packet-analyzer.git
 cd network-packet-analyzer
 chmod +x install.sh
 sudo ./install.sh
