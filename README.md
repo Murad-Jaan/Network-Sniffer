@@ -1,17 +1,19 @@
-# Network Packet Analyzer - Enterprise Edition
+# Network Sniffer - Enterprise Edition
 
 [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub Stars](https://img.shields.io/github/stars/Murad-Jaan/Network-Sniffer.svg)](https://github.com/Murad-Jaan/Network-Sniffer)
 [![Supported OS](https://img.shields.io/badge/OS-Linux%20%7C%20Windows%20%7C%20macOS-brightgreen.svg)](#supported-platforms)
 
-A **professional, enterprise-grade network packet analyzer** that captures, analyzes, and inspects network traffic with advanced vulnerability detection capabilities.
+A **professional, enterprise-grade network sniffer** that captures, analyzes, and inspects network traffic with advanced vulnerability detection capabilities.
 
 ## ✨ Features
 
 ### 🔍 **Packet Capture & Analysis**
 - Real-time network packet capture
+- **Multithreaded engine** for high-performance, non-blocking capture
 - Multi-protocol support (TCP, UDP, ICMP, ARP, IPv4, IPv6)
+- **DNS query extraction** and parsing
 - Deep packet inspection (DPI)
 - Layer-by-layer protocol analysis
 - Payload analysis and display
@@ -31,7 +33,8 @@ A **professional, enterprise-grade network packet analyzer** that captures, anal
 - Responsive design (desktop, tablet, mobile)
 
 ### 💾 **Data Management**
-- JSON export functionality
+- **PCAP file export** for industry-standard Wireshark analysis
+- JSON export functionality (fixed and optimized)
 - Packet capture history
 - Search and filter capabilities
 - Batch processing
@@ -80,8 +83,8 @@ python network_sniffer.py
 brew install python3
 
 # Clone and run
-git clone https://github.com/Murad-Jaan/Network-Sniffer.git
-cd Network-Sniffer.git
+git clone https://github.com/yourusername/network-packet-analyzer.git
+cd network-packet-analyzer
 sudo python3 network_sniffer.py
 ```
 
@@ -89,8 +92,8 @@ sudo python3 network_sniffer.py
 
 ```bash
 # Build and run
-docker build -t Network-Sniffer.
-docker run --net=host -it Network-Sniffer
+docker build -t network-analyzer .
+docker run --net=host -it network-analyzer
 
 # Or with docker-compose
 docker-compose up
@@ -193,7 +196,7 @@ file:///path/to/network_sniffer_dashboard.html
 ## 🛠️ Architecture
 
 ```
-Network Packet Analyzer
+Network Sniffer
 ├── Packet Capture Layer (Raw Sockets)
 ├── Protocol Parsing Layer (Multi-layer)
 ├── Analysis Engine
@@ -284,9 +287,9 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 ## 🙋 Support
 
 - **Documentation**: Read the [guides](.)
-- **Issues**: Report on [GitHub Issues](https://github.com/Murad-Jaan/Network-Sniffer/issues)
-- **Discussions**: Join [GitHub Discussions](https://github.com/Murad-Jaan/Network-Sniffer.git/discussions)
-- **Email**: muradjan.work@gmail.com
+- **Issues**: Report on [GitHub Issues](https://github.com/yourusername/network-packet-analyzer/issues)
+- **Discussions**: Join [GitHub Discussions](https://github.com/yourusername/network-packet-analyzer/discussions)
+- **Email**: support@example.com
 
 ## 🙏 Acknowledgments
 

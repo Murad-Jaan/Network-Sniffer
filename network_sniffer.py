@@ -9,6 +9,9 @@ import struct
 import textwrap
 import sys
 import json
+import time
+import threading
+import queue
 from datetime import datetime
 from collections import defaultdict
 import re
@@ -143,6 +146,40 @@ def parse_ipv4_addresses(data):
     """Parse IPv4 addresses from data"""
     src_addr, dest_addr = struct.unpack('! 4s 4s', data[:8])
     return format_ipv4(src_addr), format_ipv4(dest_addr), data[8:]
+
+# ============================================================================
+# DNS PARSING
+# ============================================================================
+
+def parse_dns(data):
+    """Parse DNS header and extract queries."""
+    try:
+        transaction_id, flags, questions, answer_rrs, authority_rrs, additional_rrs = struct.unpack('! H H H H H H', data[:12])
+        query_data = data[12:]
+        queries = []
+        for _ in range(questions):
+            domain_parts = []
+            idx = 0
+            while True:
+                if idx >= len(query_data):
+                    break
+                length = query_data[idx]
+                if length == 0:
+                    idx += 1
+                    break
+                if (length & 0xC0) == 0xC0:
+                    idx += 2
+                    break
+                idx += 1
+                domain_parts.append(query_data[idx:idx+length].decode('utf-8', errors='ignore'))
+                idx += length
+            if domain_parts:
+                queries.append('.'.join(domain_parts))
+            idx += 4
+            query_data = query_data[idx:]
+        return queries
+    except Exception:
+        return []
 
 # ============================================================================
 # PAYLOAD FORMATTING & INSPECTION
@@ -399,7 +436,23 @@ class PacketSniffer:
         self.stats = defaultdict(int)
         self.output_file = output_file
         self.packets_data = []  # Store packet data for export
+        self.raw_packets = []   # Store raw bytes for PCAP export
+        self.packet_queue = queue.Queue()
+        self.is_running = False
         
+    def _process_worker(self):
+        """Worker thread to process packets from the queue"""
+        while self.is_running or not self.packet_queue.empty():
+            try:
+                # Use a timeout to periodically check if we should stop
+                raw_buffer, timestamp = self.packet_queue.get(timeout=1.0)
+                self.process_packet(raw_buffer, timestamp)
+                self.packet_queue.task_done()
+            except queue.Empty:
+                continue
+            except Exception as e:
+                print(f"{Colors.WARNING}Error in worker thread: {e}{Colors.RESET}")
+
     def start(self):
         """Start sniffing packets"""
         print(f"{Colors.HEADER}{'='*80}")
@@ -440,24 +493,38 @@ class PacketSniffer:
             print(f"{Colors.OKBLUE}Listening for packets...{Colors.RESET}\n")
             print(f"{Colors.WARNING}Press Ctrl+C to stop{Colors.RESET}\n")
             
-            while True:
+            self.is_running = True
+            worker_thread = threading.Thread(target=self._process_worker)
+            worker_thread.daemon = True
+            worker_thread.start()
+
+            while self.is_running:
                 if self.packet_count > 0 and self.packets_captured >= self.packet_count:
+                    self.is_running = False
                     break
                 
                 try:
                     raw_buffer = conn.recvfrom(65535)[0]
+                    # Capture exact time for PCAP and Display
+                    capture_time = time.time()
                     self.packets_captured += 1
-                    self.process_packet(raw_buffer)
+                    self.raw_packets.append((capture_time, raw_buffer))
+                    self.packet_queue.put((raw_buffer, capture_time))
                 except KeyboardInterrupt:
+                    self.is_running = False
                     break
                 except Exception as e:
-                    print(f"{Colors.WARNING}Error processing packet: {e}{Colors.RESET}")
+                    print(f"{Colors.WARNING}Error capturing packet: {e}{Colors.RESET}")
                     continue
+            
+            # Wait for remaining packets in queue to be processed
+            if not self.packet_queue.empty():
+                print(f"{Colors.OKCYAN}\nProcessing remaining packets in queue...{Colors.RESET}")
+            self.packet_queue.join()
                 
         except KeyboardInterrupt:
+            self.is_running = False
             print(f"\n\n{Colors.WARNING}Sniffer stopped by user{Colors.RESET}")
-            self.print_statistics()
-            self.export_packets()
         except PermissionError:
             print(f"\n{Colors.FAIL}Error: This program requires administrator/root privileges{Colors.RESET}")
             if sys.platform == 'darwin':
@@ -476,24 +543,43 @@ class PacketSniffer:
             sys.exit(1)
         except Exception as e:
             print(f"\n{Colors.FAIL}Unexpected Error: {e}{Colors.RESET}")
-            print("Please report this issue at: https://github.com/yourusername/network-packet-analyzer/issues")
+            print("Please report this issue at: https://github.com/Murad-Jaan/Network-Sniffer/issues")
             sys.exit(1)
+        finally:
+            if 'worker_thread' in locals() and worker_thread.is_alive():
+                self.is_running = False
+                worker_thread.join(timeout=2.0)
+            self.print_statistics()
+            self.export_packets()
+            self.export_pcap()
     
-    def process_packet(self, data):
+    def process_packet(self, data, capture_time=None):
         """Process a single packet"""
-        timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        if capture_time is None:
+            capture_time = time.time()
+        dt_obj = datetime.fromtimestamp(capture_time)
+        timestamp = dt_obj.strftime("%H:%M:%S.%f")[:-3]
         
         dest_mac, src_mac, eth_proto, payload = parse_ethernet_frame(data)
         self.stats['Total'] += 1
+        
+        packet_info = {
+            'timestamp': dt_obj.isoformat(),
+            'eth_src': src_mac,
+            'eth_dst': dest_mac,
+            'protocol': 'Unknown'
+        }
         
         # IPv4
         if eth_proto == 8:
             self.stats['IPv4'] += 1
             version, header_length, ttl, proto, src, target, payload = parse_ipv4_packet(payload)
+            packet_info.update({'src_ip': src, 'dst_ip': target})
             
             # ICMP
             if proto == 1:
                 self.stats['ICMP'] += 1
+                packet_info['protocol'] = 'ICMP'
                 icmp_type, code, checksum, payload = parse_icmp_packet(payload)
                 icmp_type_str = ICMP_TYPES.get(icmp_type, f'Unknown({icmp_type})')
                 
@@ -506,7 +592,9 @@ class PacketSniffer:
             # TCP
             elif proto == 6:
                 self.stats['TCP'] += 1
+                packet_info['protocol'] = 'TCP'
                 src_port, dest_port, sequence, acknowledgment, flag_urg, flag_ack, flag_psh, flag_rst, flag_syn, flag_fin, payload = parse_tcp_segment(payload)
+                packet_info.update({'src_port': src_port, 'dst_port': dest_port})
                 
                 tcp_flags = format_tcp_flags(flag_urg, flag_ack, flag_psh, flag_rst, flag_syn, flag_fin)
                 src_service = get_port_service(src_port)
@@ -525,7 +613,9 @@ class PacketSniffer:
             # UDP
             elif proto == 17:
                 self.stats['UDP'] += 1
+                packet_info['protocol'] = 'UDP'
                 src_port, dest_port, size, payload = parse_udp_segment(payload)
+                packet_info.update({'src_port': src_port, 'dst_port': dest_port})
                 
                 src_service = get_port_service(src_port)
                 dest_service = get_port_service(dest_port)
@@ -537,11 +627,17 @@ class PacketSniffer:
                     f"Size: {size} bytes"
                 ))
                 
-                if len(payload) > 0:
+                if src_port == 53 or dest_port == 53:
+                    queries = parse_dns(payload)
+                    if queries:
+                        print(f"    {Colors.HEADER}DNS Queries: {', '.join(queries)}{Colors.RESET}")
+                        packet_info['dns_queries'] = queries
+                elif len(payload) > 0:
                     print(format_payload(payload))
             
             # Other
             else:
+                packet_info['protocol'] = f'IPv4_{proto}'
                 print(format_packet_info(
                     timestamp, 'IPv4',
                     src, target,
@@ -551,6 +647,7 @@ class PacketSniffer:
         # ARP
         elif eth_proto == 2054:
             self.stats['ARP'] += 1
+            packet_info['protocol'] = 'ARP'
             print(format_packet_info(
                 timestamp, 'ARP',
                 src_mac, dest_mac,
@@ -560,6 +657,7 @@ class PacketSniffer:
         # IPv6
         elif eth_proto == 34525:
             self.stats['IPv6'] += 1
+            packet_info['protocol'] = 'IPv6'
             print(format_packet_info(
                 timestamp, 'IPv6',
                 src_mac, dest_mac,
@@ -568,12 +666,14 @@ class PacketSniffer:
         
         # Unknown
         else:
+            packet_info['protocol'] = f'Ethernet_{eth_proto}'
             print(format_packet_info(
                 timestamp, 'Unknown',
                 src_mac, dest_mac,
                 f"Protocol: {eth_proto}"
             ))
         
+        self.packets_data.append(packet_info)
         print()  # Blank line for readability
     
     def print_statistics(self):
@@ -602,9 +702,39 @@ class PacketSniffer:
                     'total_packets': len(self.packets_data),
                     'packets': self.packets_data
                 }, f, indent=2)
-            print(f"\n{Colors.OKGREEN}✓ Packets exported to {self.output_file}{Colors.RESET}")
+            print(f"\n{Colors.OKGREEN}✓ Packets exported to JSON: {self.output_file}{Colors.RESET}")
         except Exception as e:
-            print(f"{Colors.FAIL}✗ Failed to export packets: {e}{Colors.RESET}")
+            print(f"{Colors.FAIL}✗ Failed to export JSON: {e}{Colors.RESET}")
+
+    def export_pcap(self):
+        """Export captured raw packets to a PCAP file"""
+        if not self.output_file or not self.raw_packets:
+            return
+            
+        pcap_file = self.output_file
+        if pcap_file.endswith('.json'):
+            pcap_file = pcap_file[:-5] + '.pcap'
+        elif not pcap_file.endswith('.pcap'):
+            pcap_file += '.pcap'
+            
+        try:
+            with open(pcap_file, 'wb') as f:
+                # PCAP Global Header
+                # Magic Number, Major, Minor, Reserved1, Reserved2, SnapLen, LinkType (1 for Ethernet)
+                global_header = struct.pack('<I H H I I I I', 0xa1b2c3d4, 2, 4, 0, 0, 65535, 1)
+                f.write(global_header)
+                
+                for capture_time, raw_buffer in self.raw_packets:
+                    sec = int(capture_time)
+                    usec = int((capture_time - sec) * 1000000)
+                    length = len(raw_buffer)
+                    # Packet Header: ts_sec, ts_usec, incl_len, orig_len
+                    packet_header = struct.pack('<I I I I', sec, usec, length, length)
+                    f.write(packet_header)
+                    f.write(raw_buffer)
+            print(f"{Colors.OKGREEN}✓ Packets exported to PCAP: {pcap_file}{Colors.RESET}")
+        except Exception as e:
+            print(f"{Colors.FAIL}✗ Failed to export PCAP: {e}{Colors.RESET}")
 
 # ============================================================================
 # MAIN

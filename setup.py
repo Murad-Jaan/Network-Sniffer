@@ -10,18 +10,18 @@ else:
     long_description = "Network Packet Analyzer - Professional network packet analyzer with security vulnerability detection"
 
 setup(
-    name="network-packet-analyzer",
+    name="Network-Sniffer",
     version="2.0.0",
     author="Network Analyzer Team",
     author_email="support@example.com",
     description="Professional network packet analyzer with security vulnerability detection",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/network-packet-analyzer",
+    url="https://github.com/Murad-Jaan/Network-Sniffer",
     project_urls={
-        "Documentation": "https://github.com/yourusername/network-packet-analyzer#readme",
-        "Source": "https://github.com/yourusername/network-packet-analyzer",
-        "Tracker": "https://github.com/yourusername/network-packet-analyzer/issues",
+        "Documentation": "https://github.com/Murad-Jaan/Network-Sniffer#readme",
+        "Source": "https://github.com/Murad-Jaan/Network-Sniffer",
+        "Tracker": "https://github.com/Murad-Jaan/Network-Sniffer/issues",
     },
     packages=find_packages(exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
     classifiers=[

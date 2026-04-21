@@ -21,8 +21,8 @@ This guide covers installation for Linux, macOS, and Windows.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/network-packet-analyzer.git
-cd network-packet-analyzer
+git clone https://github.com/Murad-Jaan/Network-Sniffer.git
+cd Network-Sniffer
 
 # Run installation script
 chmod +x install.sh
@@ -46,7 +46,7 @@ sudo apt-get install -y python3 python3-pip
 sudo apt-get install -y libpcap-dev
 
 # Navigate to project directory
-cd network-packet-analyzer
+cd Network-Sniffer
 
 # Run the sniffer with sudo
 sudo python3 network_sniffer.py
@@ -56,8 +56,8 @@ sudo python3 network_sniffer.py
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/network-packet-analyzer.git
-cd network-packet-analyzer
+git clone https://github.com/Murad-Jaan/Network-Sniffer.git
+cd Network-Sniffer
 
 # Install Python 3
 sudo dnf install -y python3 python3-pip
@@ -73,8 +73,8 @@ sudo python3 network_sniffer.py
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/network-packet-analyzer.git
-cd network-packet-analyzer
+git clone https://github.com/Murad-Jaan/Network-Sniffer.git
+cd Network-Sniffer
 
 # Install Python 3
 sudo pacman -S python python-pip
@@ -117,8 +117,8 @@ install.bat
 # Open Command Prompt as Administrator
 
 # Clone the repository
-git clone https://github.com/yourusername/network-packet-analyzer.git
-cd network-packet-analyzer
+git clone https://github.com/Murad-Jaan/Network-Sniffer.git
+cd Network-Sniffer
 
 # Run Python (verify it's installed)
 python --version
@@ -150,8 +150,8 @@ python network_sniffer.py
 brew install python3
 
 # Clone repository
-git clone https://github.com/yourusername/network-packet-analyzer.git
-cd network-packet-analyzer
+git clone https://github.com/Murad-Jaan/Network-Sniffer.git
+cd Network-Sniffer
 
 # Run the sniffer (may require sudo)
 sudo python3 network_sniffer.py
@@ -166,8 +166,8 @@ sudo python3 network_sniffer.py
 sudo port install python39
 
 # Clone repository
-git clone https://github.com/yourusername/network-packet-analyzer.git
-cd network-packet-analyzer
+git clone https://github.com/Murad-Jaan/Network-Sniffer.git
+cd Network-Sniffer
 
 # Run the sniffer
 sudo python3 network_sniffer.py
@@ -180,8 +180,8 @@ sudo python3 network_sniffer.py
 # Run the installer
 
 # Clone repository
-git clone https://github.com/yourusername/network-packet-analyzer.git
-cd network-packet-analyzer
+git clone https://github.com/Murad-Jaan/Network-Sniffer.git
+cd Network-Sniffer
 
 # Run the sniffer
 sudo python3 network_sniffer.py
@@ -195,14 +195,14 @@ Install as a Python package:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/network-packet-analyzer.git
-cd network-packet-analyzer
+git clone https://github.com/Murad-Jaan/Network-Sniffer.git
+cd Network-Sniffer
 
 # Install in development mode
 pip install -e .
 
 # Or install from PyPI (when published)
-pip install network-packet-analyzer
+pip install Network-Sniffer
 
 # Run from anywhere
 network-analyzer
@@ -218,8 +218,8 @@ network-analyzer
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/network-packet-analyzer.git
-cd network-packet-analyzer
+git clone https://github.com/Murad-Jaan/Network-Sniffer.git
+cd Network-Sniffer
 
 # Build image
 docker build -t network-analyzer .
@@ -382,20 +382,20 @@ alias python=python3
 
 ```bash
 # Remove source directory
-rm -rf network-packet-analyzer/
+rm -rf Network-Sniffer/
 
 # If installed via pip
-pip uninstall network-packet-analyzer
+pip uninstall Network-Sniffer
 ```
 
 ### Windows
 
 ```batch
 # Delete the directory
-rmdir /s network-packet-analyzer
+rmdir /s Network-Sniffer
 
 # If installed via pip
-pip uninstall network-packet-analyzer
+pip uninstall Network-Sniffer
 ```
 
 ---
