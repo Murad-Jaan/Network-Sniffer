@@ -589,6 +589,7 @@ class PacketSniffer:
 
     def _start_raw_engine(self):
         """Start sniffing packets using raw sockets"""
+        try:
             # Platform-specific socket creation
             if sys.platform == 'win32':
                 # Windows: AF_PACKET is not available
