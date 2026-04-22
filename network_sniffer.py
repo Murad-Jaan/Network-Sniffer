@@ -18,6 +18,12 @@ import re
 import base64
 from urllib.parse import unquote
 
+try:
+    import scapy.all as scapy
+    SCAPY_AVAILABLE = True
+except ImportError:
+    SCAPY_AVAILABLE = False
+
 # ANSI color codes for terminal output
 class Colors:
     RESET = '\033[0m'
@@ -421,7 +427,7 @@ def format_packet_info(timestamp, protocol, src, dest, details=""):
 # ============================================================================
 
 class PacketSniffer:
-    def __init__(self, interface=None, packet_count=0, output_file=None):
+    def __init__(self, interface=None, packet_count=0, output_file=None, engine='scapy'):
         """
         Initialize packet sniffer
         
@@ -429,6 +435,7 @@ class PacketSniffer:
             interface: Network interface to sniff on (None = all)
             packet_count: Number of packets to capture (0 = unlimited)
             output_file: File to save captured packets (JSON format)
+            engine: Sniffing engine to use ('scapy' or 'raw')
         """
         self.interface = interface
         self.packet_count = packet_count
@@ -439,6 +446,12 @@ class PacketSniffer:
         self.raw_packets = []   # Store raw bytes for PCAP export
         self.packet_queue = queue.Queue()
         self.is_running = False
+        
+        if engine == 'scapy' and not SCAPY_AVAILABLE:
+            print(f"{Colors.WARNING}Warning: Scapy not installed. Falling back to raw sockets.{Colors.RESET}")
+            self.engine = 'raw'
+        else:
+            self.engine = engine
         
     def _process_worker(self):
         """Worker thread to process packets from the queue"""
@@ -456,10 +469,126 @@ class PacketSniffer:
     def start(self):
         """Start sniffing packets"""
         print(f"{Colors.HEADER}{'='*80}")
-        print(f"Network Packet Analyzer Started")
+        print(f"Network Packet Analyzer Started (Engine: {self.engine})")
         print(f"{'='*80}{Colors.RESET}\n")
         
+        if self.engine == 'scapy':
+            self._start_scapy_engine()
+        else:
+            self._start_raw_engine()
+
+    def _start_scapy_engine(self):
+        print(f"{Colors.OKBLUE}Listening for packets using Scapy...{Colors.RESET}\n")
+        print(f"{Colors.WARNING}Press Ctrl+C to stop{Colors.RESET}\n")
+        
         try:
+            kwargs = {'prn': self.process_packet_scapy, 'store': False}
+            if self.interface:
+                kwargs['iface'] = self.interface
+            if self.packet_count > 0:
+                kwargs['count'] = self.packet_count
+                
+            scapy.sniff(**kwargs)
+        except KeyboardInterrupt:
+            print(f"\n\n{Colors.WARNING}Sniffer stopped by user{Colors.RESET}")
+        except Exception as e:
+            print(f"{Colors.FAIL}Error: {e}{Colors.RESET}")
+            if sys.platform == 'win32' and "Npcap" in str(e):
+                print(f"{Colors.WARNING}Please install Npcap from https://npcap.com/ to use Scapy on Windows.{Colors.RESET}")
+        finally:
+            self.print_statistics()
+            self.export_packets()
+            self.export_pcap()
+
+    def process_packet_scapy(self, packet):
+        timestamp = datetime.now()
+        timestamp_str = timestamp.strftime("%H:%M:%S.%f")[:-3]
+        
+        self.stats['Total'] += 1
+        
+        packet_info = {
+            'timestamp': timestamp.isoformat(),
+            'protocol': 'Unknown'
+        }
+        
+        if scapy.Ether in packet:
+            packet_info['eth_src'] = packet[scapy.Ether].src
+            packet_info['eth_dst'] = packet[scapy.Ether].dst
+            
+        if scapy.IP in packet:
+            self.stats['IPv4'] += 1
+            src = packet[scapy.IP].src
+            dst = packet[scapy.IP].dst
+            packet_info['src_ip'] = src
+            packet_info['dst_ip'] = dst
+            
+            if scapy.ICMP in packet:
+                self.stats['ICMP'] += 1
+                packet_info['protocol'] = 'ICMP'
+                icmp_type = packet[scapy.ICMP].type
+                print(format_packet_info(timestamp_str, 'ICMP', src, dst, f"Type: {icmp_type}"))
+                
+            elif scapy.TCP in packet:
+                self.stats['TCP'] += 1
+                packet_info['protocol'] = 'TCP'
+                src_port = packet[scapy.TCP].sport
+                dst_port = packet[scapy.TCP].dport
+                packet_info['src_port'] = src_port
+                packet_info['dst_port'] = dst_port
+                
+                flags = packet[scapy.TCP].flags
+                src_service = get_port_service(src_port)
+                dest_service = get_port_service(dst_port)
+                
+                print(format_packet_info(timestamp_str, 'TCP', f"{src}:{src_port}({src_service})", f"{dst}:{dst_port}({dest_service})", f"Flags: {flags}"))
+                
+                if scapy.Raw in packet:
+                    payload = bytes(packet[scapy.Raw])
+                    print(format_payload(payload))
+                    
+            elif scapy.UDP in packet:
+                self.stats['UDP'] += 1
+                packet_info['protocol'] = 'UDP'
+                src_port = packet[scapy.UDP].sport
+                dst_port = packet[scapy.UDP].dport
+                packet_info['src_port'] = src_port
+                packet_info['dst_port'] = dst_port
+                
+                src_service = get_port_service(src_port)
+                dest_service = get_port_service(dst_port)
+                
+                print(format_packet_info(timestamp_str, 'UDP', f"{src}:{src_port}({src_service})", f"{dst}:{dst_port}({dest_service})", f"Size: {len(packet[scapy.UDP])} bytes"))
+                
+                if scapy.DNS in packet and packet[scapy.DNS].qr == 0:
+                    queries = [packet[scapy.DNS].qd.qname.decode('utf-8', errors='ignore')] if packet[scapy.DNS].qd else []
+                    if queries:
+                        print(f"    {Colors.HEADER}DNS Queries: {', '.join(queries)}{Colors.RESET}")
+                        packet_info['dns_queries'] = queries
+                elif scapy.Raw in packet:
+                    payload = bytes(packet[scapy.Raw])
+                    print(format_payload(payload))
+            else:
+                packet_info['protocol'] = 'IPv4'
+                print(format_packet_info(timestamp_str, 'IPv4', src, dst, f"Protocol: {packet[scapy.IP].proto}"))
+        elif scapy.ARP in packet:
+            self.stats['ARP'] += 1
+            packet_info['protocol'] = 'ARP'
+            print(format_packet_info(timestamp_str, 'ARP', packet[scapy.ARP].hwsrc, packet[scapy.ARP].hwdst, "Address Resolution Protocol"))
+        elif scapy.IPv6 in packet:
+            self.stats['IPv6'] += 1
+            packet_info['protocol'] = 'IPv6'
+            print(format_packet_info(timestamp_str, 'IPv6', packet[scapy.IPv6].src, packet[scapy.IPv6].dst, "IPv6 Packet"))
+        else:
+            print(format_packet_info(timestamp_str, 'Unknown', 'N/A', 'N/A', "Unknown Protocol"))
+            
+        self.packets_data.append(packet_info)
+        
+        # Save raw packet for PCAP export
+        self.raw_packets.append((time.time(), scapy.raw(packet)))
+        print()
+
+    def _start_raw_engine(self):
+        """Start sniffing packets using raw sockets"""
             # Platform-specific socket creation
             if sys.platform == 'win32':
                 # Windows: AF_PACKET is not available
@@ -752,6 +881,8 @@ if __name__ == '__main__':
                        help='Output file for captured packets (JSON format)')
     parser.add_argument('-i', '--interface', type=str, default=None,
                        help='Network interface to sniff on')
+    parser.add_argument('-e', '--engine', choices=['scapy', 'raw'], default='scapy',
+                       help='Sniffing engine to use (scapy or raw)')
     parser.add_argument('-v', '--verbose', action='store_true',
                        help='Enable verbose output')
     
@@ -760,7 +891,8 @@ if __name__ == '__main__':
     sniffer = PacketSniffer(
         interface=args.interface,
         packet_count=args.count,
-        output_file=args.output
+        output_file=args.output,
+        engine=args.engine
     )
     
     try:

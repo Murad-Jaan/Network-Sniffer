@@ -11,7 +11,7 @@
 # flask-cors==4.0.0
 
 # Advanced packet processing
-# scapy==2.5.0
+scapy==2.5.0
 # dpkt==1.9.7
 
 # Database storage

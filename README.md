@@ -164,7 +164,7 @@ sudo python3 network_sniffer.py -i eth0
 sudo python3 network_sniffer.py -v
 
 # Combine options
-sudo python3 network_sniffer.py 1000 -i eth0 -o capture.json -v
+sudo python3 network_sniffer.py 1000 -i eth0 -o capture.json -e scapy -v
 
 # Show help
 python3 network_sniffer.py --help
@@ -197,7 +197,9 @@ file:///path/to/network_sniffer_dashboard.html
 
 ```
 Network Sniffer
-├── Packet Capture Layer (Raw Sockets)
+├── Packet Capture Layer (Dual Engine)
+│   ├── Scapy Engine (Cross-platform)
+│   └── Raw Socket Engine (Linux/macOS native)
 ├── Protocol Parsing Layer (Multi-layer)
 ├── Analysis Engine
 │   ├── Protocol Analysis
@@ -256,8 +258,7 @@ Network-Sniffer/
 
 ### Permissions
 - **Linux/macOS**: Requires `sudo` for raw socket access
-- **Windows**: Requires Administrator privileges
-- Some features need Npcap on Windows
+- **Windows**: Requires Administrator privileges and Npcap installed. Use the Scapy engine (`-e scapy`) to capture natively on Windows.
 
 ### Privacy & Legal
 - Only use on networks you own or have permission to monitor
@@ -294,7 +295,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 ## 🙏 Acknowledgments
 
 - Built with Python 3
-- Uses standard library only
+- Dual Engine Architecture (Scapy + Standard Library Raw Sockets)
 - Inspired by professional tools like Wireshark
 - Community feedback and contributions
 
