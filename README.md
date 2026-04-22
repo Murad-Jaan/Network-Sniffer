@@ -69,9 +69,6 @@ sudo python3 network_sniffer.py
 git clone https://github.com/Murad-Jaan/Network-Sniffer.git
 cd Network-Sniffer
 
-# Run installer (as Administrator)
-install.bat
-
 # Start analyzing
 python network_sniffer.py
 ```
